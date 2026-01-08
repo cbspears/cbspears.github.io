@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charlie Spears</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0c0c0c;
+            --text: #e8e8e8;
+            --accent: #d4a574;
+            --muted: #6b6b6b;
+            --border: #2a2a2a;
+            --box-bg: #111;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            font-size: 15px;
+            line-height: 1.6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* The centered box */
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--box-bg);
+            border: 1px solid var(--border);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            gap: 2rem;
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        nav a {
+            color: var(--muted);
+            font-size: 0.85rem;
+            transition: color 0.2s ease;
+        }
+
+        nav a:hover,
+        nav a.active {
+            color: var(--text);
+        }
+
+        /* Content area */
+        .content {
+            padding: 3rem 2rem;
+        }
+
+        /* Hero / Main statement */
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 400;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            color: var(--accent);
+        }
+
+        .hero-text {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        /* Links section */
+        .links-section {
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .links-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .links-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .links-list a {
+            color: var(--text);
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+
+        .links-list a:hover {
+            color: var(--accent);
+        }
+
+        .links-list .external::after {
+            content: ' ↗';
+            font-size: 0.75rem;
+            opacity: 0.5;
+        }
+
+        /* Contact footer */
+        .contact {
+            padding: 1.25rem 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .contact a {
+            color: var(--accent);
+            font-size: 0.9rem;
+        }
+
+        .contact a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            body {
+                padding: 1rem;
+                align-items: flex-start;
+            }
+
+            nav {
+                gap: 1.25rem;
+                padding: 1rem 1.5rem;
+                flex-wrap: wrap;
+            }
+
+            .content {
+                padding: 2rem 1.5rem;
+            }
+
+            .contact {
+                padding: 1rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <a href="index.html" class="active">Home</a>
+            <a href="portfolio.html">Portfolio</a>
+            <a href="writing.html">Writing</a>
+            <a href="talks.html">Talks</a>
+            <a href="https://twitter.com/cbspears" target="_blank">Twitter</a>
+        </nav>
+
+        <main class="content">
+            <div class="hero">
+                <h1>Bitcoin <em>media</em>, <em>tech</em>, and <em>mining</em>.</h1>
+                <p class="hero-text">
+                    Angel investor, writer, and podcast host exploring the infrastructure 
+                    and ideas shaping the next financial epoch.
+                </p>
+            </div>
+
+            <div class="links-section">
+                <h2>Work</h2>
+                <div class="links-list">
+                    <a href="portfolio.html">Angel Portfolio</a>
+                    <a href="https://blockspacemedia.com" target="_blank" class="external">Blockspace</a>
+                </div>
+            </div>
+
+            <div class="links-section">
+                <h2>Writing</h2>
+                <div class="links-list">
+                    <a href="writing.html">My Articles</a>
+                    <a href="https://newsletter.blockspacemedia.com" target="_blank" class="external">Blockspace Newsletter</a>
+                </div>
+            </div>
+
+            <div class="links-section">
+                <h2>Media</h2>
+                <div class="links-list">
+                    <a href="talks.html">Conference Talks</a>
+                    <a href="https://feeds.megaphone.fm/bitcoin-season-2" target="_blank" class="external">Podcast Archive (RSS)</a>
+                </div>
+            </div>
+        </main>
+
+        <footer class="contact">
+            <a href="mailto:cbspears@gmail.com">cbspears@gmail.com</a>
+        </footer>
+    </div>
+</body>
+</html>

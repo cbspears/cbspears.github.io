@@ -1,0 +1,42 @@
+# This workflow runs the scraper daily and updates articles.json
+name: Scrape Blockspace Articles
+
+on:
+  # Run every day at 6am UTC (midnight Central Time)
+  schedule:
+    - cron: '0 6 * * *'
+  
+  # Also allow manual runs from GitHub UI
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Check out your repository
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      # 4. Run the scraper
+      - name: Run scraper
+        run: python scraper.py
+      
+      # 5. Commit and push the updated articles.json
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add articles.json
+          git diff --staged --quiet || git commit -m "Update articles.json [automated]"
+          git push
