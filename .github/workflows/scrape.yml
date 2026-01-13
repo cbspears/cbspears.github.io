@@ -12,7 +12,9 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+
     steps:
       # 1. Check out your repository
       - name: Checkout repo
