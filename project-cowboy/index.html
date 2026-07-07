@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Project Cowboy — AI Data Center Build Cycle</title>
+<style>
+  :root {
+    --paper: #F6F7F5;
+    --paper-raise: #FDFDFC;
+    --ink: #1B2523;
+    --ink-soft: #35403D;
+    --slate: #5C6663;
+    --copper: #B4622D;
+    --copper-soft: #C77B45;
+    --petrol: #14544C;
+    --rule: #D8DCD7;
+    --rule-strong: #1B2523;
+    --bull: #2E6B45;
+    --bear: #9B3B2E;
+    --chip-bg: #ECEEEA;
+    --verdict-bg: #F1EDE6;
+    --table-head: #EDEFEA;
+    --table-zebra: #F1F3EF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #131A18;
+      --paper-raise: #1A2220;
+      --ink: #DFE4DF;
+      --ink-soft: #C2C9C3;
+      --slate: #8B958F;
+      --copper: #CE8B52;
+      --copper-soft: #B4713D;
+      --petrol: #4BA396;
+      --rule: #2C3532;
+      --rule-strong: #DFE4DF;
+      --bull: #6FB98A;
+      --bear: #D07A6B;
+      --chip-bg: #222B28;
+      --verdict-bg: #1C2320;
+      --table-head: #202826;
+      --table-zebra: #182019;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #131A18;
+    --paper-raise: #1A2220;
+    --ink: #DFE4DF;
+    --ink-soft: #C2C9C3;
+    --slate: #8B958F;
+    --copper: #CE8B52;
+    --copper-soft: #B4713D;
+    --petrol: #4BA396;
+    --rule: #2C3532;
+    --rule-strong: #DFE4DF;
+    --bull: #6FB98A;
+    --bear: #D07A6B;
+    --chip-bg: #222B28;
+    --verdict-bg: #1C2320;
+    --table-head: #202826;
+    --table-zebra: #182019;
+  }
+  :root[data-theme="light"] {
+    --paper: #F6F7F5;
+    --paper-raise: #FDFDFC;
+    --ink: #1B2523;
+    --ink-soft: #35403D;
+    --slate: #5C6663;
+    --copper: #B4622D;
+    --copper-soft: #C77B45;
+    --petrol: #14544C;
+    --rule: #D8DCD7;
+    --rule-strong: #1B2523;
+    --bull: #2E6B45;
+    --bear: #9B3B2E;
+    --chip-bg: #ECEEEA;
+    --verdict-bg: #F1EDE6;
+    --table-head: #EDEFEA;
+    --table-zebra: #F1F3EF;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Iowan Old Style", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 20px 96px;
+  }
+  .sheet { max-width: 700px; margin: 0 auto; }
+  .wide { max-width: 940px; margin-left: auto; margin-right: auto; }
+
+  .utility, th, .chip, .eyebrow, .meta, figcaption, .rating-label, .tag {
+    font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  }
+
+  /* ---------- Masthead ---------- */
+  header { padding-top: 56px; }
+  .eyebrow {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--copper); margin: 0 0 18px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .eyebrow .conf { color: var(--slate); }
+  .eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--rule); min-width: 40px; }
+  h1 {
+    font-size: clamp(34px, 6vw, 52px);
+    line-height: 1.06; font-weight: 700; letter-spacing: -0.015em;
+    margin: 0 0 10px; text-wrap: balance;
+  }
+  .subtitle {
+    font-size: clamp(19px, 3vw, 24px); font-style: italic; color: var(--ink-soft);
+    margin: 0 0 30px; text-wrap: balance;
+  }
+  .meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px 28px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    padding: 14px 0; font-size: 13px; color: var(--slate);
+  }
+  .meta strong { display: block; color: var(--ink); font-weight: 600; margin-top: 2px; }
+  .meta .deadline strong { color: var(--copper); }
+  #chirp { display: block; width: 100%; height: 44px; margin: 26px 0 8px; }
+  .chirp-caption { font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate); text-align: right; margin: 0 0 40px; }
+
+  /* ---------- Verdict box ---------- */
+  .verdict {
+    background: var(--verdict-bg);
+    border-top: 3px double var(--copper);
+    border-bottom: 3px double var(--copper);
+    padding: 30px 30px 24px; margin: 0 0 56px;
+  }
+  .rating-label {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--slate); margin: 0 0 6px;
+  }
+  .rating {
+    font-size: clamp(22px, 4vw, 30px); font-weight: 700; letter-spacing: -0.01em;
+    color: var(--petrol); margin: 0 0 20px; line-height: 1.15; text-wrap: balance;
+  }
+  .verdict ol { margin: 0 0 18px; padding-left: 22px; }
+  .verdict li { margin-bottom: 14px; }
+  .verdict li:last-child { margin-bottom: 0; }
+  .confidence { font-size: 13px; color: var(--slate); font-style: italic; white-space: nowrap; }
+  .bottom-line { border-top: 1px solid var(--rule); padding-top: 16px; margin: 18px 0 0; }
+  .bottom-line em.lead { font-style: normal; font-weight: 700; color: var(--copper); }
+
+  /* ---------- Sections ---------- */
+  section { margin-bottom: 60px; }
+  h2 {
+    font-size: clamp(23px, 4vw, 28px); font-weight: 700; letter-spacing: -0.01em;
+    line-height: 1.2; margin: 0 0 6px; text-wrap: balance;
+  }
+  .sec-rule { display: flex; align-items: baseline; gap: 14px; border-top: 2px solid var(--rule-strong); padding-top: 14px; margin-bottom: 22px; }
+  .sec-num {
+    font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: var(--copper);
+    flex-shrink: 0; padding-top: 6px;
+  }
+  h3 { font-size: 19px; font-weight: 700; margin: 30px 0 8px; }
+  p { margin: 0 0 16px; }
+  strong { font-weight: 700; }
+  a { color: var(--petrol); text-decoration-color: var(--rule); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--copper); outline-offset: 2px; }
+  ul, ol { margin: 0 0 18px; padding-left: 24px; }
+  li { margin-bottom: 9px; }
+  li::marker { color: var(--copper); }
+  .kicker { color: var(--copper); font-weight: 700; }
+
+  blockquote {
+    margin: 24px 0; padding: 4px 0 4px 22px;
+    border-left: 2px solid var(--copper);
+    font-style: italic; color: var(--ink-soft);
+  }
+
+  /* ---------- Tables ---------- */
+  .exhibit { margin: 28px 0 32px; }
+  figcaption {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--slate); margin: 0 0 10px;
+  }
+  figcaption b { color: var(--copper); font-weight: 700; }
+  .scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper-raise); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; line-height: 1.45; }
+  th {
+    background: var(--table-head); text-align: left; font-size: 11.5px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft);
+    padding: 10px 14px; border-bottom: 2px solid var(--rule-strong); vertical-align: bottom;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; font-variant-numeric: tabular-nums; }
+  tbody tr:nth-child(even) td { background: var(--table-zebra); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; }
+  .t-strong { font-weight: 700; }
+  .t-copper { color: var(--copper); font-weight: 700; }
+  .t-bull { color: var(--bull); font-weight: 600; }
+  .t-bear { color: var(--bear); font-weight: 600; }
+  .rowlabel { font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", system-ui, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--slate); }
+
+  .chip {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 2px 8px; border: 1px solid currentColor;
+    border-radius: 2px; margin-bottom: 6px;
+  }
+  .chip.bull { color: var(--bull); }
+  .chip.base { color: var(--copper); }
+  .chip.bear { color: var(--bear); }
+
+  .footnote, .method { font-size: 14.5px; color: var(--ink-soft); }
+  .method p { margin-bottom: 12px; }
+  .divider { border: none; border-top: 1px solid var(--rule); margin: 48px 0; }
+  .end-rule { border: none; border-top: 3px double var(--copper); margin: 56px 0 28px; }
+  .disclaimer { font-size: 12.5px; color: var(--slate); font-style: italic; }
+
+  @media print {
+    body { padding: 0 8mm; font-size: 11pt; }
+    .scroll { overflow: visible; border: none; }
+    #chirp { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <p class="eyebrow">Project Cowboy · Special Situation Assessment <span class="conf">· Confidential</span></p>
+    <h1>The AI Data Center Build Cycle</h1>
+    <p class="subtitle">Length, fragility, and the price of a doubling</p>
+    <div class="meta">
+      <div>Prepared for<strong>Richard Spears · Spears &amp; Associates</strong></div>
+      <div>Prepared by<strong>Charlie Spears · Blockspace research desk</strong></div>
+      <div>Report date<strong>July 6, 2026</strong></div>
+      <div class="deadline">Bid deadline<strong>July 8, 2026</strong></div>
+    </div>
+    <canvas id="chirp" aria-hidden="true"></canvas>
+    <p class="chirp-caption">variable frequency — the product, and the problem</p>
+  </header>
+
+  <div class="verdict">
+    <p class="rating-label">Assessment</p>
+    <p class="rating">Bid — with structure, at normalized earnings. Not a walk-away; not a chase.</p>
+    <ol>
+      <li><strong>The build cycle is multi-year, not a spike.</strong> Hyperscaler capex is still <em>accelerating</em> into 2026 (~$700–725B for the big four, +60–77% y/y), 2027 consensus is now above $1&nbsp;trillion, and every serious model — Goldman, McKinsey, the bears' own — carries elevated spend through at least 2028. Demand through ~2028 is contracted and financed. <span class="confidence">(High confidence)</span></li>
+      <li><strong>But July 2026 is at or near peak cycle tightness.</strong> Goldman explicitly dates peak data center market tightness (&gt;95% occupancy) to <strong>late 2026</strong> — this quarter — with moderation starting 2027 and "the risk of long-term market oversupply we see in 2027 and beyond." A seller coming to market right now, priced on a two-year revenue doubling, is selling at maximum optics. Richard's oilfield instinct is the correct one <em>on price</em>. <span class="confidence">(High confidence)</span></li>
+      <li><strong>VFDs are a short-cycle product riding a long-cycle boom.</strong> Transformers (128+&nbsp;week lead times), switchgear (sold out through 2028), and gensets (Caterpillar booked through 2027) carry 2–3 years of contracted revenue that would survive a downturn. <strong>Drives do not:</strong> low-voltage VFDs are book-and-ship (weeks), medium-voltage engineered-to-order (months). If data center orders slow, this company feels it within one to two quarters. <span class="confidence">(High confidence)</span></li>
+    </ol>
+    <p class="bottom-line"><em class="lead">Bottom line:</em> Bid — the demand is real and the cycle has years of runway — but underwrite <strong>normalized</strong> earnings, not the doubling. Value the oilfield base as an oilfield business, haircut the data-center contribution to a sustainable run-rate, and bridge any gap to the seller's boom-priced ask with an earnout tied to data center revenue <em>persistence</em> into 2027–28. Framework in Section&nbsp;8.</p>
+  </div>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">SUMMARY</span><h2>Executive Summary</h2></div>
+    <p>Richard's question — is the AI/data center build cycle short or long? — has a well-evidenced answer: <strong>long, with a dangerous middle.</strong> The physical buildout (shells, power, electrical infrastructure) is a multi-year, arguably decade-scale program constrained by electricity and equipment, not by demand. But the <em>rate of spending growth</em> peaks somewhere in 2026–28, the financing regime is degrading from cash to credit, and the market's own forecaster (Goldman) puts maximum tightness in late 2026 — the exact window in which this bid is due.</p>
+    <p>The evidence base: a 108-agent research sweep across hyperscaler filings, investment bank research, SemiAnalysis, BloombergNEF, McKinsey, and OEM order books, with 25 claims put through three-vote adversarial verification (24 confirmed, 1 refuted); Blockspace's internal Miner-HPC-Pivot master report (June 2026, ~54k words, claims checked against primary sources); plus targeted research on VFD market structure and valuation comps completed July 6, 2026.</p>
+    <p>What distinguishes this cycle from the oilfield booms Spears &amp; Associates has watched for fifty years:</p>
+    <ul>
+      <li><strong>The constraint is physical and serial.</strong> Deliverable electricity — not capital, not demand — is the binding input. Gas turbines quote 3–7 years, large transformers ~128 weeks, grid interconnection a ~5-year national median. Supply <em>cannot</em> catch up quickly, which extends the cycle.</li>
+      <li><strong>The spenders are the most creditworthy corporations on earth</strong> — through about 2028. Microsoft, Google, Amazon, and Meta fund from cash flow, though free cash flow is now falling: combined big-four FCF dropped $237B → $200B in 2025, Alphabet's long-term debt quadrupled to $46.5B, and Barclays models negative Meta FCF in 2027–28. The fragility sits in the 2028–2030 layer: AI revenue must scale from roughly $60–100B/year today toward $600B–2T to justify the spend (Sequoia, Bain).</li>
+      <li><strong>The assets depreciate fast.</strong> Unlike 1999's fiber (glass that waited a decade for demand), GPUs are 3–5-year assets. Overbuild here is <em>more</em> dangerous than fiber overbuild — but that risk concentrates in the silicon layer. The electrical layer (substations, switchgear, generation) is 20–30-year infrastructure, and $720B (Goldman) to $1.4T (EEI) of grid spend rides behind it regardless of which AI lab wins.</li>
+    </ul>
+    <p>For the target specifically: its two-year revenue doubling is consistent with the market, not a company-specific fluke — Danfoss's data center revenue nearly doubled in one year (to ~7% of group, ~€660M), and ABB printed <em>triple-digit</em> data center order growth in Q1 2026. That is reassuring about the demand's reality and sobering about its nature: <strong>the doubling is beta, not alpha.</strong> The company is riding the wave, and the wave's own cartographers date its crest to now.</p>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">1</span><h2>Demand: Still Accelerating Into the Bid Window</h2></div>
+    <p>Every hard demand indicator was still pointing up as of the Q1 2026 earnings cycle (April 29, 2026):</p>
+  </section>
+</div>
+
+<div class="wide">
+  <figure class="exhibit">
+    <figcaption><b>Exhibit 1</b> — Hyperscaler capital expenditure, 2025 → 2026 guidance</figcaption>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Spender</th><th class="num">2025 capex</th><th class="num">2026 guide</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td class="t-strong">Microsoft</td><td class="num">~$88B (FY)</td><td class="num t-copper">~$190B CY26</td><td>vs $152B consensus. CFO: capacity-constrained "at least through 2026"; doubling DC footprint in 2 yrs</td></tr>
+          <tr><td class="t-strong">Alphabet</td><td class="num">~$85B</td><td class="num t-copper">$180–190B</td><td>Raised April 2026; 2027 will "significantly increase"; Morgan Stanley: up to $250B in 2027</td></tr>
+          <tr><td class="t-strong">Amazon</td><td class="num">~$125B</td><td class="num t-copper">~$200B-class</td><td>vs $147B consensus. Negative FCF modeled for 2026 (MS: −$17B; BofA: −$28B)</td></tr>
+          <tr><td class="t-strong">Meta</td><td class="num">~$72B</td><td class="num t-copper">$125–145B</td><td>Raised. Barclays models negative FCF 2027–28</td></tr>
+          <tr><td class="t-strong">Oracle</td><td class="num">—</td><td class="num t-copper">~$50B</td><td>+136% y/y; $523B remaining performance obligations</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </figure>
+</div>
+
+<div class="sheet">
+  <section>
+    <ul>
+      <li><strong>Big-four 2026 total: ~$700–725B, up 60–77% from 2025's record ~$410B.</strong> BloombergNEF's broader 14-operator universe: ~$450B (2025) → ~$750B (2026). Every Q1 2026 revision went <em>up</em>. <span class="confidence">[Verified 3-0, multiple sources]</span></li>
+      <li><strong>Sell-side 2027 estimates for the 14 largest developers were revised up 56% in six months</strong> (Aug 2025 → Feb 2026, BNEF). Consensus 2027 Big Tech capex now exceeds <strong>$1 trillion</strong>. <span class="confidence">[Verified]</span></li>
+      <li><strong>Contracted demand extends past the narrative horizon:</strong> ~$100B+ of hyperscaler–neocloud compute leases signed in the six months to March 2026, mostly 5-year terms locking demand through ~2031; Google Cloud's backlog hit <strong>$460B</strong> in Q1 2026, roughly doubling in one quarter. <span class="confidence">[Verified]</span></li>
+      <li><strong>Physical pipeline:</strong> 23.1 GW under construction globally across 831 sites (~17 GW Americas) per BloombergNEF — at 18–36-month build times, mechanically incapable of completing as a "short spike." <span class="confidence">[Verified 2-1; end-Q3 2025 snapshot]</span></li>
+    </ul>
+    <p><span class="kicker">Read for Cowboy:</span> the demand feeding the target's data center segment is not cresting yet on any reported number. The risk is not 2026; it is what the 2027–28 prints do to a company with a short order book.</p>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">2</span><h2>What the Street and the Forecasters Actually Say</h2></div>
+    <p><strong>Goldman Sachs</strong> (the house view most cited in the deal context): global data center power demand +50% by 2027 and +165% by 2030 vs 2023 — later revised <em>up</em> to ~+220% — requiring ~$720B of grid investment through 2030. Their capex model runs to <strong>~$7.6T cumulative AI infrastructure spend 2026–2031</strong> (a model, not a forecast — the single biggest swing variable is GPU useful life: a 3-year vs 7-year replacement cycle swings cumulative depreciation between $3.99T and $2.23T). But the same shop, same analyst (James Schneider), makes the timing point that matters most for this bid: <strong>occupancy peaks above 95% in late 2026, moderates from 2027 as a supply wave lands (GS models 36.3 GW of 2027 US additions vs 13.6 GW in 2026), with explicit "risk of long-term market oversupply we see in 2027 and beyond."</strong> <span class="confidence">[Verified 3-0]</span></p>
+    <p><strong>McKinsey</strong> bounds the cycle as multi-year in <em>every</em> scenario: ~$6.7T global data center capex needed by 2030 (band: $3.7T constrained – $7.9T accelerated); capacity demand nearly triples by 2030. Actual 2026 spend is tracking at or <em>above</em> their base case. Of the $5.2T AI slice, ~25% ($1.3T) goes to "energizers" — power generation, cooling, electrical infrastructure — of which ~$0.8T is electrical/mechanical equipment. <strong>Only a fraction of that $0.8T is VFD/genset-addressable — size the target's market off that slice, not the headlines.</strong> <span class="confidence">[Verified 3-0]</span></p>
+    <p><strong>EPRI</strong> (Feb 2026): data centers reach <strong>9–17% of US electricity by 2030</strong> — a range EPRI itself doubled from its 2024 estimate. The forecasting establishment is chasing the load, not leading it. The full 2030 US demand range across BCG/BNEF/IEA/Jefferies/McKinsey/S&amp;P/EPRI spans 206–970 TWh — a 5x spread that tells you the high scenarios assume capex compounds without a digestion phase. <span class="confidence">[Blockspace MHP Ch.10]</span></p>
+    <p><strong>The bears</strong> (and this is the part Richard should weigh): Sequoia's David Cahn calculates the ecosystem needs ~$600B/yr of AI revenue against ~$50–100B actual; Bain sees an ~$800B revenue shortfall by 2030; MIT and NBER studies find most enterprise AI pilots show no measurable ROI yet; Michael Burry is short via GPU-depreciation-accounting arguments. <strong>But the bears' own models date the problem to 2028+, not 2026–27 — Barclays projects AI capex exceeding $1T and peaking in 2028.</strong> The bear case is real; it is also self-dating. <span class="confidence">[Verified 3-0]</span></p>
+    <p><strong>Blockspace house view</strong> (Miner-HPC-Pivot, June 2026): <em>"tiered credit," not bubble-or-boom.</em> Demand through ~2028 is contracted, financed, and led by counterparties that can pay. The fragility sits in the 2028–2030 layer — lab cash burn, single-tenant neocloud credit (CoreWeave alone carries ~$20B+ of TCV on a non-investment-grade balance sheet), and the unresolved AI revenue gap. The signal to watch: <strong>the first year-over-year hyperscaler capex cut — earliest plausible sighting, the January–February 2027 earnings cycle. That's the regime change.</strong></p>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">3</span><h2>John's Point: Cancellations Are Real — and Mostly Don't Matter for Equipment (Yet)</h2></div>
+    <p>John is right that proposed projects are being cancelled and delayed. The diligence question is whether those cancellations flow through to <em>equipment</em> demand. The verified answer, as of June 2026: <strong>no.</strong></p>
+    <ul>
+      <li><strong>SemiAnalysis</strong> (June 18, 2026, responding directly to the "half of 2026 data centers delayed" headlines): their year-end-2026 North America hyperscaler self-build forecast moved <strong>~1%</strong> over six months; colocation &lt;5%. <em>"The projects getting canceled sit in the early-stage layer that never placed equipment orders in the first place… the slot is reallocated to the next buyer in line."</em> <span class="confidence">[Primary source, verified 3-0]</span></li>
+      <li><strong>The OEM order books corroborate:</strong> Eaton Electrical backlog +48% y/y to $14.5B; Vertiv backlog &gt;$15B on record orders; GE Vernova signed 21 GW of new gas-turbine agreements in Q1 2026 alone — more data center electrification orders in that one quarter than in all of 2025. Zero visible cancellation impact. <span class="confidence">[Verified]</span></li>
+      <li><strong>The famous Microsoft "lease cancellations" of early 2025</strong> were expired letters-of-intent and unconverted statements-of-qualification — pre-equipment-order paper. <span class="confidence">[Verified]</span></li>
+      <li><strong>The genuine warning shots, for the record:</strong> OpenAI cut its headline compute commitment from $1.4T to ~$600B (Feb 2026), exited Stargate Norway, halted UK construction; only one of six-plus US Stargate sites is even partially energized (Abilene: ~0.3 GW live of 1.2 GW planned). The February 2026 market scare erased &gt;$1.35T of hyperscaler market cap in a week before recovering. And Sightline Climate independently estimates 30–50% of the 2026 pipeline may <em>slip</em>. <span class="confidence">[Blockspace MHP; verified]</span></li>
+    </ul>
+    <p><span class="kicker">The crucial irony for a Tulsa equipment maker:</span> most 2026 "delays" are caused by <em>equipment shortage</em> — switchgear sold out through 2028; Engie withdrew a 930 MW project because it couldn't procure gear; only about a third of 2026's planned 12–16 GW is actually under construction, the rest waiting on electrical equipment with 3–5-year deliveries. Delays of this kind don't destroy equipment demand — they <em>stretch it rightward</em>, extending the cycle for suppliers. The mechanism only breaks if hyperscaler demand rolls over broadly and the whole queue thins.</p>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">4</span><h2>The Physical Cycle: Equipment Backlogs as the Honest Clock</h2></div>
+    <p>Forget the narratives; the order books are the cleanest cycle-length instrument we have. As of mid-2026:</p>
+  </section>
+</div>
+
+<div class="wide">
+  <figure class="exhibit">
+    <figcaption><b>Exhibit 2</b> — Lead times and revenue visibility by equipment class (the money exhibit)</figcaption>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Equipment</th><th>Lead time / backlog</th><th>Revenue visibility</th></tr></thead>
+        <tbody>
+          <tr><td class="t-strong">Gas turbines (frame)</td><td>GE Vernova quoting ~3 yrs; industry 5–7 yrs; ~10 GW of 2029–30 slots left</td><td class="t-bull">Through 2030+</td></tr>
+          <tr><td class="t-strong">Large power transformers</td><td>~128 wks avg; GSUs 144 wks; specials to 4–5 yrs; 10–15% prepayments to hold queue slots</td><td class="t-bull">Through 2029 (WoodMac: 30% deficit 2026 → ~5% by 2030)</td></tr>
+          <tr><td class="t-strong">MV switchgear</td><td>~22 months; "sold out through 2028"</td><td class="t-bull">Through 2028</td></tr>
+          <tr><td class="t-strong">Gensets (Cat / Cummins / Rolls-Royce)</td><td>Cat backlog $51.2B, sold out through 2027; Q1-26 orders deliver 2028; leads to 107 wks</td><td class="t-bull">Through 2028</td></tr>
+          <tr><td class="t-copper">VFDs / drives</td><td class="t-strong">LV: book-and-ship, weeks. MV: engineered-to-order, months. Not on allocation.</td><td class="t-bear">Quarters, not years</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </figure>
+</div>
+
+<div class="sheet">
+  <section>
+    <p>The top four rows are why "the cycle is long" is nearly a physical fact: OEMs hold 3–6 years of contracted, prepaid revenue, and new manufacturing capacity (Hitachi's $457M Virginia transformer plant, the turbine majors' 25–35%/yr expansions) doesn't arrive until 2028+.</p>
+    <p>The bottom row is why that fact <strong>does not automatically protect the target.</strong> ABB itself classifies drives as "short-cycle" business. A drives maker's data center revenue is only as durable as <em>next quarter's</em> order intake — unless its drives are embedded in someone else's long-cycle program.</p>
+    <p><span class="kicker">This makes channel the single most important diligence item (Section 9, Q1).</span> Richard said the company's VFDs "work… for running the power generation of data centers." If that means drives packaged into genset/turbine/behind-the-meter power programs — the VoltaGrid-style modular recip plants, the 29-aeroderivative Abilene-type installations, engine and turbine auxiliaries — then the target's delivery schedule <em>inherits</em> the genset makers' 24–30-month backlog visibility through its OEM customers. If instead its data center revenue is distributor book-and-ship into cooling and general mechanical, it has essentially no cover. These are radically different earnings-quality profiles hiding under the same revenue line.</p>
+    <p>Behind-the-meter generation, worth flagging as genuinely new demand: the "bring your own power plant" model is now the default bridge (Abilene permitted ~360 MW of simple-cycle turbines plus 1.015 GW of aeroderivatives; Meta's Hyperion runs ten on-site gas plants; xAI's Memphis campus ran ~420 MW of gas turbines — and drew a Clean Air Act lawsuit doing it). Gas recips tolerate only ~1% instantaneous load steps near full load, forcing power-electronics buffering — a structural tailwind for MV drives, PCS, and inverters that did not exist in any prior cycle.</p>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">5</span><h2>The Oilfield Leg, and the Joint-Stress Problem</h2></div>
+    <p>The other half of the target's book — artificial lift — Spears &amp; Associates knows better than we do, so only the cycle-relevant facts:</p>
+    <ul>
+      <li>US E&amp;P discipline persists: 36 large E&amp;Ps guided 2026 capex to $59.1B, <strong>−5% vs 2025</strong>. WTI ~$68–69 (early July 2026) against EIA forecasts that had projected ~$51 — actuals better than feared, direction still flat. Rig count 573, +26 y/y after 8 straight weekly gains, but Permian −12 y/y.</li>
+      <li>Secular supports are real: ESPs are ~70% of US shale lift; the ESP market is projected to grow ~7.6%/yr to 2035; field electrification pushes VFD content per well up. Artificial lift is production-weighted, not drilling-weighted — the most downturn-resilient part of oilfield spend.</li>
+      <li><strong>The joint-stress scenario is the one that impairs the deal:</strong> an oil-price downturn hitting lift spending <em>simultaneously</em> with the Goldman-modeled 2027 data center moderation. The two end markets are uncorrelated on the way up — that's the diversification pitch — but both are capex-cycle businesses, and 2027–28 is the window where both could exhale together. Normalized through-cycle EBITDA must be stress-tested against that joint case, not each leg separately.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">6</span><h2>History: Which Boom Is This?</h2></div>
+    <p><strong>Fiber, 1999–2002</strong> (the analogy everyone reaches for): capacity financed against circular-funded customers; when it broke, equipment suppliers (Lucent, Nortel) lost 95%+ and the <em>equipment</em> market took a decade to recover even though the <em>glass</em> eventually filled. Two differences cut in opposite directions. Unlike fiber, today's anchor demand comes from profitable, investment-grade spenders on contracted leases — better. Unlike fiber, the core asset (GPUs) depreciates in 3–5 years, so overbuild forces write-downs fast rather than waiting patiently for demand — worse. Blockspace's formulation: <em>"the depreciating asset makes overbuild more dangerous, not less."</em> The saving grace for an electrical supplier: the power layer is the non-depreciating part of this stack. Substations don't become obsolete when the H100 does.</p>
+    <p><strong>The oilfield's own lesson</strong> — the one Richard already carries — is about <em>entry price, not cycle direction</em>. The buyers who got hurt in 2014 and 2018 weren't wrong that shale was a durable, decade-scale industry; it was and is. They were wrong to capitalize peak-year cash flows at premium multiples. Both things were true at once. That is precisely the setup here: a real, long cycle <em>and</em> a seller marketing peak-optics numbers into a July 2026 window that the market's own models identify as maximum tightness.</p>
+    <p><strong>Electrical equipment supercycles</strong> run longer than either: the last major US transformer/switchgear upcycle (late 1960s–70s) ran over a decade, and today's grid spend ($1.3–1.4T planned 2026–2030 by US utilities alone) is utility-rate-base money, the slowest and stickiest capex on earth. If AI disappoints, grid electrification (reshoring, EVs, heat pumps, plain load growth) is the demand floor under electrical equipment broadly — a floor fiber never had.</p>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">7</span><h2>Scenarios, 2026–2030</h2></div>
+  </section>
+</div>
+
+<div class="wide">
+  <figure class="exhibit">
+    <figcaption><b>Exhibit 3</b> — Scenario matrix and buyer outcomes</figcaption>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th><span class="chip bull">Bull · ~25%</span><br>"Power-constrained decade"</th>
+            <th><span class="chip base">Base · ~50%</span><br>"Long build, 2027–28 digestion"</th>
+            <th><span class="chip bear">Bear · ~25%</span><br>"Capex regime change"</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rowlabel">Shape</td>
+            <td>Compute supply-constrained through 2029+; &gt;$1T 2027 capex lands; BTM generation standard; sovereign/enterprise second wave arrives</td>
+            <td>Buildout continues through 2028–30 but tightness peaks late 2026; capex growth decelerates to +10–20% in 2027, flat 2028; delays stretch deliveries rightward</td>
+            <td>First y/y hyperscaler capex <em>cut</em> at Jan–Feb 2027 or 2028 earnings; AI revenue gap forces retrenchment; credit-financed spend unwinds; WTI soft in the same window</td>
+          </tr>
+          <tr>
+            <td class="rowlabel">Key evidence today</td>
+            <td>MSFT "constrained through 2026"; ABB DC orders +triple-digit; queues/backlogs at records; GS revised power demand UP to +220%</td>
+            <td>GS occupancy peak late 2026 + 36 GW 2027 supply wave; FCF degradation; OpenAI $1.4T→$600B walk-back; Sightline 30–50% slippage</td>
+            <td>Bain $800B revenue gap; negative FCF models (AMZN 2026, META 2027–28); Feb 2026's $1.35T scare as dress rehearsal</td>
+          </tr>
+          <tr>
+            <td class="rowlabel">Target's DC revenue</td>
+            <td class="t-bull">Keeps compounding 20%+ through 2028; MV/BTM niche re-rates the whole company</td>
+            <td class="t-strong">Plateaus ±10–15% at the doubled level; growth story dies, revenue mostly doesn't</td>
+            <td class="t-bear">Falls 20–40% within 2–3 quarters of the cut (short-cycle book); oilfield leg flat-to-down simultaneously</td>
+          </tr>
+          <tr>
+            <td class="rowlabel">TTM-multiple buyer</td>
+            <td class="t-bull">Hero</td>
+            <td>Paid full price for flat earnings; dead money 2–3 yrs</td>
+            <td class="t-bear">Impaired 30–50% on entry value</td>
+          </tr>
+          <tr>
+            <td class="rowlabel">Normalized-multiple buyer</td>
+            <td class="t-bull">Very good; slightly under-earned upside</td>
+            <td class="t-bull">Solid</td>
+            <td>Protected; earnout never pays, headline price self-corrects</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </figure>
+</div>
+
+<div class="sheet">
+  <section>
+    <p>The asymmetry is the whole argument: pricing on normalized EBITDA costs you a little in the bull case and saves the deal in the bear case. Pricing on TTM hypergrowth only wins in the bull tail — and the bid is due at what Goldman calls the top of the tightness curve.</p>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">8</span><h2>Valuation: What to Pay for a Doubling</h2></div>
+    <h3>Where the market is (July 6–7, 2026 data)</h3>
+    <ul>
+      <li><strong>Public comps have re-rated 1.5–3x their own histories.</strong> Vertiv ~52x trailing EV/EBITDA (5-yr avg ~22x); <strong>Powell Industries — the closest public cousin: Houston electrical gear, oil-gas heritage, data-center re-rating — trades ~37x vs its own 10-year median of 12.4x.</strong> Eaton ~29x (pre-2020: ~12x); Schneider ~21x vs 14.7x median; Hubbell ~19x vs 16.5x. Aggregator commentary puts 20–30% multiple-compression risk on the group from a hyperscaler pause <em>without any earnings miss</em>.</li>
+      <li><strong>Strategic M&amp;A cluster for DC-exposed electrical equipment: ~11.5–12.7x forward EBITDA, synergized.</strong> Vertiv–Great Lakes $200M at ~11.5x expected-2026 EBITDA <em>including</em> synergies (SEC 8-K; trailing standalone necessarily higher); Eaton–Fibrebond $1.4B at ~12.7x; nVent–Avail $975M at ~12.5x. Outlier: Eaton–Boyd Thermal at ~22.5x (liquid-cooling scarcity asset — not this deal's comp). Where the DC halo is absent, industrial power assets clear at ~1x revenue or less (Hammond–AEG ~1.1x; Regal Rexnord's motors business sold to WEG well under 1x).</li>
+      <li><strong>Lower-middle-market base rates:</strong> GF Data manufacturing ~6.1–6.5x; Capstone middle-market average ~9.8x, engineered products with IP and customer lock-in 9–12x. Capstone's HVAC-equipment read shows the measurable "data center premium" at roughly <strong>+2 turns</strong> in a year (9.0x → 10.9x); against the strategic cluster it's +4–6 turns over generic manufacturing.</li>
+    </ul>
+    <h3>Recommended framework — a sum-of-cycles bid, not a single multiple</h3>
+    <ol>
+      <li><strong>Rebuild EBITDA into three streams:</strong> (a) oilfield/artificial-lift base, (b) data center revenue at a <em>sustainable post-2027 run-rate</em> — we'd underwrite the doubled level held roughly flat, i.e., credit the step-change but pay nothing for continued hypergrowth — and (c) the hypergrowth increment above that run-rate, which gets valued only through contingent structure.</li>
+      <li><strong>Value stream (a) like the oilfield business it is</strong> (~5–7x through-cycle), <strong>stream (b) at engineered-industrial quality</strong> (~8–10x, reflecting real, verified demand with weak backlog cover), <strong>and stream (c) via earnout</strong> tied to data center revenue persistence through FY2027–28 — the exact period the Goldman moderation and the internal "regime change" signal say will decide the question. In practice this blends to roughly <strong>7–9x honestly-normalized EBITDA all-in before synergies</strong> — below the 11.5–12.7x strategic cluster (those were larger, stickier, backlog-carrying assets bought by synergy-rich strategics), well below anything implied by public-comp optics.</li>
+      <li><strong>Structure beats price.</strong> An earnout on 2027–28 DC revenue converts the core uncertainty (is the doubling a level-shift or a spike?) from a pricing argument into a self-resolving contract. A seller who refuses persistence-based contingency is telling you what they think of persistence.</li>
+      <li><strong>Walk-away discipline:</strong> if competing bidders push the headline past ~10x normalized (i.e., toward the synergized strategic cluster without a strategic's synergies), let it go. On these verified numbers, the winner's-curse scenario — paying Powell-style re-rated optics for a short-cycle book at the GS-dated peak — is the single most probable way to lose money on an otherwise sound thesis.</li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">9</span><h2>Ten Questions for the Data Room (Before July 8)</h2></div>
+    <ol>
+      <li><strong>Channel and order-book composition (the decisive one):</strong> What share of data center revenue ships through genset/turbine/BTM-power OEM programs with contracted delivery schedules vs distributor book-and-ship? What is the actual backlog in weeks/months, by segment, today vs 2024?</li>
+      <li>Customer concentration in the DC segment — and are any of them neoclouds or single-tenant developers (the 2028-fragile layer) rather than hyperscalers/genset OEMs?</li>
+      <li>Are DC orders subject to cancellation without penalty? Any prepayments/deposits (transformer-style) or purely PO-driven?</li>
+      <li>What did management's own 2027 budget assume for DC growth <em>before</em> the sale process began? (Ask for the pre-process board deck.)</li>
+      <li>Price vs volume: how much of the doubling is unit growth vs pricing/surcharges that normalize when component shortages (memory, power semis) ease?</li>
+      <li>Capacity: did they add fixed capacity/capex to serve the DC surge (operating leverage that cuts both ways), or is it flexing the same Tulsa footprint?</li>
+      <li>MV vs LV mix in the DC book — MV/engineered content is stickier and closer to the BTM-generation tailwind; LV is the most exposed to a fast order-rate reset.</li>
+      <li>Artificial-lift segment: ESP-driven (production-weighted, resilient) vs new-drill-driven? What did it earn through the 2015–16 and 2020 troughs?</li>
+      <li>Supply chain: exposure to power-semiconductor/IGBT allocation — could <em>their</em> input lead times blow out and cost them share right at peak demand?</li>
+      <li>Anything in the seller's timing? Founder retirement is one thing; a sophisticated sponsor selling into "the late-2026 peak" is a different signal. Who's the seller and why now?</li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-rule"><span class="sec-num">10</span><h2>Signals Watchlist (Post-Bid Monitoring)</h2></div>
+  </section>
+</div>
+
+<div class="wide">
+  <figure class="exhibit">
+    <figcaption><b>Exhibit 4</b> — Regime-change indicators, dated</figcaption>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>When</th><th>Signal</th><th>Regime meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="t-strong">Jul 29–30, 2026</td><td>MSFT/META Q2 earnings — capex guides</td><td>Any language softening = first crack</td></tr>
+          <tr><td class="t-strong">Q3–Q4 2026</td><td>GS-modeled 2027 supply wave (36.3 GW) delivery evidence; conversion economics (e.g., TeraWulf's first full quarters)</td><td>Delivered = moderation on schedule; slipped = cycle stretches right</td></tr>
+          <tr><td class="t-strong">Quarterly</td><td>Eaton/Vertiv/GE Vernova/ABB orders &amp; backlog prints; Danfoss DC revenue share</td><td>Order-rate is the target's true leading indicator</td></tr>
+          <tr><td class="t-strong">Continuous</td><td>GB200/GB300 GPU rental rates (older-gen softening first)</td><td>The earliest demand-health telemetry — "most analogous to hashprice"</td></tr>
+          <tr><td class="t-copper">Jan–Feb 2027</td><td class="t-strong">First y/y hyperscaler capex cut</td><td class="t-bear">The regime change. Short-cycle drives revenue follows within 1–2 quarters</td></tr>
+          <tr><td class="t-strong">Continuous</td><td>WTI strip, rig count, E&amp;P 2027 budgets</td><td>The other leg of the joint-stress case</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </figure>
+</div>
+
+<div class="sheet">
+  <hr class="end-rule">
+  <section class="method">
+    <div class="sec-rule"><span class="sec-num">APPENDIX</span><h2>Method &amp; Source Notes</h2></div>
+    <p>Built from three streams: (1) a 108-agent deep-research sweep (fan-out search → source fetch → claim extraction → 3-vote adversarial verification; 25 claims tested, 24 confirmed, 1 refuted and excluded); (2) Blockspace's internal Miner-HPC-Pivot master report (June 2026), itself verified against primary sources, cited as [Blockspace MHP]; (3) targeted verification passes on VFD market structure and valuation comps (July 6, 2026 data).</p>
+    <p><strong>Honest gaps, flagged not filled:</strong> no published $/MW benchmark exists for drives content in data centers; medium-voltage-drive lead times are directionally "months" but unverified with hard 2026 figures; no pure-play VFD M&amp;A comp with a disclosed multiple was found (nearest: Hammond–AEG ~1.1x revenue); Goldman and McKinsey quotes were verified via verbatim third-party reproductions (their sites block fetching); 2025 hyperscaler capex baselines vary $388–450B by methodology — growth rates are stated with their basis. PJM cut its load forecast in January 2026 citing "phantom" interconnection requests — the strongest verified counterpoint to the demand narrative; it disputes magnitude, not direction.</p>
+    <p><strong>Key sources:</strong> Goldman Sachs Research (Schneider, power demand/occupancy model) · McKinsey "The cost of compute" (Apr 2025) · SemiAnalysis "Stop Saying Half of 2026 US Datacenter Capacity Is Delayed" (Jun 18, 2026) · BloombergNEF AI Data Center Build tracker (Mar 2026) · CNBC hyperscaler FCF analysis (Feb 6, 2026) · company 8-Ks/PRs: Vertiv–Great Lakes, Eaton–Fibrebond, nVent–Avail, Hammond–AEG · ABB Q1-2026 &amp; Danfoss FY-2025 results · Caterpillar/Cummins/Rolls-Royce backlog disclosures · pv magazine USA transformer lead-time survey (May 2026) · GF Data / Capstone middle-market valuation reports · Baker Hughes rig counts, RBN E&amp;P capex survey · Blockspace Miner-HPC-Pivot master report (internal, Jun 2026).</p>
+    <p class="disclaimer">Prepared with AI-assisted research and adversarial fact-verification. All figures are as-reported by cited sources; company guidance and analyst models are not realized results. This document supports internal deal evaluation and is not investment advice.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById('chirp');
+  if (!canvas) return;
+  function draw() {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+    var styles = getComputedStyle(document.documentElement);
+    var copper = styles.getPropertyValue('--copper').trim() || '#B4622D';
+    var rule = styles.getPropertyValue('--rule').trim() || '#D8DCD7';
+    var mid = h / 2;
+    // baseline
+    ctx.strokeStyle = rule; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(w, mid); ctx.stroke();
+    // chirp: frequency ramps left (slow) to right (fast) — a variable frequency drive sweep
+    ctx.strokeStyle = copper; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    var amp = h * 0.38;
+    for (var x = 0; x <= w; x++) {
+      var t = x / w;
+      var phase = 2 * Math.PI * (2.5 * t + 11 * t * t);
+      var y = mid - Math.sin(phase) * amp * (0.55 + 0.45 * t);
+      if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  draw();
+  var pending = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(pending); pending = setTimeout(draw, 120);
+  });
+  // redraw when theme toggles
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+  }
+})();
+</script>
+</body>
+</html>
